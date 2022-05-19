@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "wav.h": "c",
+    "mfcc.h": "c"
+  }
+}
