@@ -8,8 +8,19 @@
 		"files.associations": {
 			"wav.h": "c",
 			"mfcc.h": "c",
-			"cwalk.h": "c"
+			"cwalk.h": "c",
+			"dirent.h": "c",
+			"stdio.h": "c",
+			"*.tcc": "c",
+			"memory_resource": "c",
+			"memory": "c",
+			"fstream": "c",
+			"istream": "c",
+			"ostream": "c",
+			"sstream": "c",
+			"streambuf": "c"
 		},
-		"editor.tabSize": 2
+		"editor.tabSize": 2,
+		"editor.tabCompletion": "onlySnippets"
 	}
 }
