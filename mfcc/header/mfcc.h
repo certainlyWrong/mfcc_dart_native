@@ -28,52 +28,88 @@
 //  DEALINGS IN THE SOFTWARE.
 
 #ifndef _MFCC_
+#define _MFCC_
+
 #include <stdint.h>
+#include <stddef.h>
 
-#ifdef _MFCC_private
-#include <math.h>
-#include <stdlib.h>
-#include <complex.h>
-
-// TODO arquitetar e implementar estrutura para representar um quadro
-
-typedef struct
-{
-	double **frameMatrix;
-	uint16_t fftSize, qtddFrames;
-} frames;
-
-double *MFCC_cp_buffer(double *Buffer, int sizeBuffer);
-void MFCC_normilize(MFCC_input *signal);
-#endif // _MFCC_private
-
+/**
+ * @brief Facilita a leitura de valores booleano
+ */
 typedef enum
 {
 	FALSE,
 	TRUE
 } Bool;
 
+/**
+ * @brief Para determinar o tipo de retorno da função "MFCC_execute"
+ *
+ */
+typedef enum
+{
+	MFCC_SUCESS,
+	MFCC_FAILED_POWER_OF_TWO,
+} MFCC_status;
+
+/**
+ * @brief Estrutura com o resultado da "MFCC_execute"
+ *
+ */
 typedef struct
 {
 	double *buffer;
 	uint16_t size;
+	MFCC_status _status;
 } MFCC_coef;
 
+/**
+ * @brief  Estrutura com os valores de entrada da "MFCC_execute"
+ *
+ */
 typedef struct
 {
 	double *buffer;
 	size_t sizeBuffer;
-	uint16_t hopSize,
+	uint32_t hopSize,
 		fftSize,
 		dctFilterNum,
 		melFilterNum;
+	uint64_t sampleRate;
 	Bool normilizeActivate;
 } MFCC_input;
 
 MFCC_input *MFCC_initDefaultValues(double *buffer, size_t sizeBuffer);
-
 MFCC_coef MFCC_execute(MFCC_input *signal);
-
 void MFCC_input_free(MFCC_input *signal);
+
+#ifdef _MFCC_private
+
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <complex.h>
+
+/**
+ * @brief Estrutura interna para lidar com o fatiamento da áudio
+ *
+ */
+typedef struct
+{
+	double **frameMatrix;
+	uint16_t fftSize, qtddFrames;
+} MFCC_frames;
+
+double absDouble(double num);
+double *MFCC_cp_buffer(double *Buffer, int sizeBuffer);
+void MFCC_normilize(MFCC_input *signal);
+void MFCC_array_pad(MFCC_input *signal, char *mode);
+MFCC_frames MFCC_frames_init(MFCC_input *signal);
+
+#ifdef _MFCC_debug
+#include <stdio.h>
+_MFCC_debug void MFCC_structs_view(void *MFCC_struct, char *MFCC_type);
+#endif // _MFCC_debug
+#endif // _MFCC_private
 
 #endif // _MFCC_
