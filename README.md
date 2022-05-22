@@ -1,4 +1,4 @@
 
-# Pacote dart de implementação do algoritmo native de extração de MFCCs
+# Pacote dart de implementação do algoritmo de extração de MFCCs em código nativo.
 
 
