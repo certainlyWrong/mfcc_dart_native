@@ -28,21 +28,24 @@
 //  DEALINGS IN THE SOFTWARE.
 
 #ifndef _MFCC_
+#include <stdint.h>
 
 #ifdef _MFCC_private
 #include <math.h>
 #include <stdlib.h>
 #include <complex.h>
 
+// TODO arquitetar e implementar estrutura para representar um quadro
+
+typedef struct
+{
+	double **frameMatrix;
+	uint16_t fftSize, qtddFrames;
+} frames;
+
 double *MFCC_cp_buffer(double *Buffer, int sizeBuffer);
 void MFCC_normilize(MFCC_input *signal);
-
-typedef struct mfcc
-{
-};
-
 #endif // _MFCC_private
-#include <stdint.h>
 
 typedef enum
 {
@@ -61,9 +64,9 @@ typedef struct
 	double *buffer;
 	size_t sizeBuffer;
 	uint16_t hopSize,
-			fftSize,
-			dctFilterNum,
-			melFilterNum;
+		fftSize,
+		dctFilterNum,
+		melFilterNum;
 	Bool normilizeActivate;
 } MFCC_input;
 

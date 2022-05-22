@@ -31,9 +31,17 @@ double *MFCC_cp_buffer(double *buffer, int sizeBuffer)
   return aux;
 }
 
-// TODO implementar normilize
 void MFCC_normilize(MFCC_input *signal)
 {
+  int maxValue = 0;
+  for (size_t i = 0; i < signal->sizeBuffer; i++)
+  {
+    if (abs((int)signal->buffer[i]) > maxValue)
+      maxValue = signal->buffer[i];
+  }
+
+  for (size_t i = 0; i < signal->sizeBuffer; i++)
+    signal->buffer[i] /= maxValue;
 }
 
 MFCC_coef MFCC_execute(MFCC_input *signal)

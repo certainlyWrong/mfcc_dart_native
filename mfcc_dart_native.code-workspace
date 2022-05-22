@@ -18,7 +18,8 @@
 			"istream": "c",
 			"ostream": "c",
 			"sstream": "c",
-			"streambuf": "c"
+			"streambuf": "c",
+			"complex.h": "c"
 		},
 		"editor.tabSize": 2,
 		"editor.tabCompletion": "onlySnippets"
