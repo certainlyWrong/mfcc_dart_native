@@ -22,7 +22,8 @@
  */
 MFCC_input *MFCC_initDefaultValues(double *buffer, size_t sizeBuffer)
 {
-  MFCC_input *aux = (MFCC_input *)malloc(sizeof(MFCC_coef));
+  MFCC_input *aux = (MFCC_input *)malloc(sizeof(MFCC_input));
+
   aux->hopSize = 15;
   aux->fftSize = 2048;
   aux->buffer = buffer;
@@ -88,9 +89,11 @@ void MFCC_normilize(MFCC_input *signal)
  */
 void MFCC_array_pad(MFCC_input *signal, char *mode)
 {
-  uint64_t padSize = signal->fftSize / 2,
-           bufferAuxMaxSize = signal->sizeBuffer + signal->fftSize;
+  size_t padSize = signal->fftSize / 2,
+         bufferAuxMaxSize = signal->sizeBuffer + signal->fftSize;
 
+  // FIXME Encontrar uma solução para alocar memoria
+  // TODO entender o que acontece com essa linha
   double *bufferAux = (double *)malloc(bufferAuxMaxSize * sizeof(double));
 
   Bool inter = FALSE;
@@ -123,11 +126,11 @@ void MFCC_array_pad(MFCC_input *signal, char *mode)
 
     for (
         size_t i = 0,
-               j = 1,
-               k = signal->sizeBuffer - 2,
+               j = padSize,
+               k = signal->sizeBuffer - padSize - 1,
                m = bufferAuxMaxSize - 1;
         i < padSize;
-        i++, j++, k--, m--)
+        i++, j--, k++, m--)
     {
       bufferAux[i] = signal->buffer[j];
       bufferAux[m] = signal->buffer[k];
@@ -185,6 +188,8 @@ MFCC_coef MFCC_execute(MFCC_input *signal)
     MFCC_normilize(signal);
 
   MFCC_frames frame = MFCC_frames_init(signal);
+
+  printf("aaaa\n");
 }
 
 double absDouble(double num)

@@ -7,6 +7,7 @@ void loadBuffer(double **, size_t, char *);
 
 int main(int argc, char const *argv[])
 {
+
 	double *buffer;
 	size_t bufferSize = 110250;
 	char *path = "/home/adrianords/Documentos/mfcc_dart_native/mfcc/buffer1_esp";
@@ -19,6 +20,7 @@ int main(int argc, char const *argv[])
 
 	// Iniciando o processamento dos MFCCs
 	MFCC_coef result = MFCC_execute(signal);
+
 	return 0;
 }
 

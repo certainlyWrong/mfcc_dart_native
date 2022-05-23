@@ -72,9 +72,9 @@ typedef struct
 	double *buffer;
 	size_t sizeBuffer;
 	uint32_t hopSize,
-		fftSize,
-		dctFilterNum,
-		melFilterNum;
+			fftSize,
+			dctFilterNum,
+			melFilterNum;
 	uint64_t sampleRate;
 	Bool normilizeActivate;
 } MFCC_input;
