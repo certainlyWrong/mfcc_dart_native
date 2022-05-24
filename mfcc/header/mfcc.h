@@ -72,9 +72,9 @@ typedef struct
 	double *buffer;
 	size_t sizeBuffer;
 	uint32_t hopSize,
-			fftSize,
-			dctFilterNum,
-			melFilterNum;
+		fftSize,
+		dctFilterNum,
+		melFilterNum;
 	uint64_t sampleRate;
 	Bool normilizeActivate;
 } MFCC_input;
@@ -97,14 +97,15 @@ void MFCC_input_free(MFCC_input *signal);
 typedef struct
 {
 	double **frameMatrix;
-	uint16_t fftSize, qtddFrames;
+	uint16_t len, num;
 } MFCC_frames;
 
-double absDouble(double num);
-double *MFCC_cp_buffer(double *Buffer, int sizeBuffer);
+MFCC_frames *MFCC_frames_init(MFCC_input *signal);
 void MFCC_normilize(MFCC_input *signal);
 void MFCC_array_pad(MFCC_input *signal, char *mode);
-MFCC_frames MFCC_frames_init(MFCC_input *signal);
+int myRound(double num);
+double myDoubleABS(double num);
+double *myBufferCP(double *Buffer, int sizeBuffer);
 
 #ifdef _MFCC_debug
 #include <stdio.h>

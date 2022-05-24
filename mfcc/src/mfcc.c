@@ -47,22 +47,6 @@ void MFCC_input_free(MFCC_input *signal)
 }
 
 /**
- * @brief Instancia um novo vetor
- *
- * @param buffer vetor que tera os valores copiados
- * @param sizeBuffer tamanho do vetor
- * @return double* novo vetor com os valores copiados
- */
-double *MFCC_cp_buffer(double *buffer, int sizeBuffer)
-{
-  double *aux = (double *)malloc(sizeof(double) * sizeBuffer);
-  for (size_t i = 0; i < sizeBuffer; i++)
-    aux[i] = buffer[i];
-
-  return aux;
-}
-
-/**
  * @brief função interna para normalização de um sinal
  *
  * @param signal
@@ -92,8 +76,6 @@ void MFCC_array_pad(MFCC_input *signal, char *mode)
   size_t padSize = signal->fftSize / 2,
          bufferAuxMaxSize = signal->sizeBuffer + signal->fftSize;
 
-  // FIXME Encontrar uma solução para alocar memoria
-  // TODO entender o que acontece com essa linha
   double *bufferAux = (double *)malloc(bufferAuxMaxSize * sizeof(double));
 
   Bool inter = FALSE;
@@ -151,15 +133,23 @@ void MFCC_array_pad(MFCC_input *signal, char *mode)
  * @param signal
  * @return MFCC_frames
  */
-MFCC_frames MFCC_frames_init(MFCC_input *signal)
+MFCC_frames *MFCC_frames_init(MFCC_input *signal)
 {
   MFCC_array_pad(signal, "reflect");
 
   MFCC_frames *aux = (MFCC_frames *)malloc(sizeof(MFCC_frames));
-  aux->fftSize = signal->fftSize;
-  aux->qtddFrames = signal->sizeBuffer / signal->fftSize;
 
-  aux->frameMatrix = (double **)malloc(sizeof(double *) * aux->qtddFrames);
+  aux->len =
+      (uint16_t)myRound((double)(signal->sampleRate * signal->hopSize) / 1000);
+  aux->num =
+      (uint16_t)myRound(((double)(signal->sizeBuffer - signal->fftSize) / aux->len) + 1);
+
+  aux->frameMatrix = (double **)malloc(sizeof(double *) * aux->num);
+  for (size_t i = 0; i < aux->num; i++)
+    aux->frameMatrix[i] =
+        myBufferCP(signal->buffer + (signal->fftSize * i), signal->fftSize);
+
+  return aux;
 }
 
 /**
@@ -174,7 +164,7 @@ MFCC_coef MFCC_execute(MFCC_input *signal)
   // Iniciando valor de retorno
   MFCC_coef result = {
       .buffer = NULL,
-      .size = 0,
+      .size = signal->dctFilterNum,
       ._status = MFCC_SUCESS,
   };
 
@@ -187,14 +177,47 @@ MFCC_coef MFCC_execute(MFCC_input *signal)
   if (signal->normilizeActivate)
     MFCC_normilize(signal);
 
-  MFCC_frames frame = MFCC_frames_init(signal);
-
-  printf("aaaa\n");
+  // TODO ultima função implementada
+  // TODO testar os valores de saida
+  MFCC_frames *frame = MFCC_frames_init(signal);
 }
 
-double absDouble(double num)
+/**
+ * @brief Retorna o valor positivo
+ *
+ * @param num
+ * @return double
+ */
+double myDoubleABS(double num)
 {
   return num < 0 ? (num * -1) : num;
+}
+
+/**
+ * @brief Arredonda o número
+ *
+ * @param num
+ * @return int
+ */
+int myRound(double num)
+{
+  return (num - ((int)num)) > .5 ? num + 1 : num;
+}
+
+/**
+ * @brief Instancia um novo vetor
+ *
+ * @param buffer vetor que tera os valores copiados
+ * @param sizeBuffer tamanho do vetor
+ * @return double* novo vetor com os valores copiados
+ */
+double *myBufferCP(double *buffer, int sizeBuffer)
+{
+  double *aux = (double *)malloc(sizeof(double) * sizeBuffer);
+  for (size_t i = 0; i < sizeBuffer; i++)
+    aux[i] = buffer[i];
+
+  return aux;
 }
 
 /**
