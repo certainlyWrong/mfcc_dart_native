@@ -36,27 +36,18 @@ MFCC_input *MFCC_initDefaultValues(double *buffer, size_t sizeBuffer)
 }
 
 /**
- * @brief Para liberar a memoria da estrutura de entrada
- *
- * @param signal
- */
-void MFCC_input_free(MFCC_input *signal)
-{
-  free(signal->buffer);
-  free(signal);
-}
-
-/**
  * @brief função interna para normalização de um sinal
  *
  * @param signal
  */
 void MFCC_normilize(MFCC_input *signal)
 {
-  double maxValue = 0, aux = 0;
+  double maxValue = 0;
+  int aux = 0;
+
   for (size_t i = 0; i < signal->sizeBuffer; i++)
   {
-    aux = absDouble((signal->buffer[i]));
+    aux = MFCC_myDoubleABS((signal->buffer[i]));
     if (aux > maxValue)
       maxValue = aux;
   }
@@ -133,34 +124,114 @@ void MFCC_array_pad(MFCC_input *signal, char *mode)
  * @param signal
  * @return MFCC_frames
  */
-MFCC_frames *MFCC_frames_init(MFCC_input *signal)
+void MFCC_frames_init(MFCC_input *signal, MFCC_frames **output)
 {
   MFCC_array_pad(signal, "reflect");
 
-  MFCC_frames *aux = (MFCC_frames *)malloc(sizeof(MFCC_frames));
+  (*output) = (MFCC_frames *)malloc(sizeof(MFCC_frames));
+  (*output)->fftSize = signal->fftSize;
+  (*output)->len =
+      (uint16_t)MFCC_myRound((double)(signal->sampleRate * signal->hopSize) / 1000);
+  (*output)->num =
+      (uint16_t)MFCC_myRound(((double)(signal->sizeBuffer - signal->fftSize) / (*output)->len) + 1);
+  (*output)->frameMatrix = (double **)malloc(sizeof(double *) * (*output)->num);
+  for (size_t i = 0; i < (*output)->num; i++)
+  {
+    (*output)->frameMatrix[i] = (double *)malloc(sizeof(double) * signal->fftSize);
+    MFCC_myBufferCP((*output)->frameMatrix[i], signal->buffer + (i * (*output)->len), signal->fftSize);
+  }
+}
 
-  aux->len =
-      (uint16_t)myRound((double)(signal->sampleRate * signal->hopSize) / 1000);
-  aux->num =
-      (uint16_t)myRound(((double)(signal->sizeBuffer - signal->fftSize) / aux->len) + 1);
+/**
+ * @brief Gera um janelamento de Hann
+ *
+ * @param fftSize tamanho da janela
+ * @return HannWindow*
+ */
+HannWindow *MFCC_hanning(uint32_t fftSize)
+{
+  HannWindow *aux = (HannWindow *)malloc(sizeof(HannWindow));
+  aux->window = (double *)malloc(sizeof(double) * fftSize);
+  aux->fftSize = fftSize;
 
-  aux->frameMatrix = (double **)malloc(sizeof(double *) * aux->num);
-  for (size_t i = 0; i < aux->num; i++)
-    aux->frameMatrix[i] =
-        myBufferCP(signal->buffer + (signal->fftSize * i), signal->fftSize);
-
+  for (size_t i = 0; i < fftSize; i++)
+    aux->window[i] = 0.5 - 0.5 * cos((2 * M_PI * i) / fftSize);
   return aux;
+}
+
+/**
+ * @brief Para multiplicar cada quadro pela janela de Hann
+ *
+ * @param frames
+ * @param window
+ */
+void MFCC_multiplyFramesForHannWindow(MFCC_frames **frames, HannWindow *window)
+{
+  for (
+      size_t i = 0, num = (*frames)->num, fftSize = window->fftSize;
+      i < num; i++)
+  {
+    for (size_t j = 0; j < fftSize; j++)
+      (*frames)->frameMatrix[i][j] *= window->window[j];
+  }
+}
+
+/**
+ * @brief Inicia uma matrix de numeros complexos a partir de um vetor de numeros reais
+ *
+ * @param frames
+ * @return MatrixComplex
+ */
+MatrixComplex *MFCC_initDefaultComplexMatrix(MFCC_frames *frames)
+{
+  MatrixComplex *matrixComplex = (MatrixComplex *)malloc(sizeof(MatrixComplex));
+  matrixComplex->rowNum = frames->num;
+
+  matrixComplex->rows = (ArrayComplex *)malloc(sizeof(ArrayComplex) * frames->num);
+  for (size_t i = 0; i < frames->num; i++)
+  {
+    matrixComplex->rows[i].columns = (double complex *)malloc(sizeof(double complex) * frames->fftSize);
+    for (size_t j = 0; j < frames->fftSize; j++)
+      matrixComplex->rows[i].columns[j] = CMPLX(frames->frameMatrix[i][j], 0);
+  }
+
+  return matrixComplex;
+}
+
+/**
+ * @brief Calcula a transformada de Fourier para um buffer que tem a quantidade
+ * de elementos igual a uma potencia de 2
+ *
+ * @param matrixComplex buffer
+ * @return MatrixComplex*
+ */
+MatrixComplex *MFCC_fft_cooleyTukey(MatrixComplex *buffer)
+{
+  for (
+      size_t i = 0,
+             rowsQuant = buffer->rowNum,
+             columnQuant = buffer->rows->columnNum;
+      i < rowsQuant; i++)
+  {
+    for (size_t j = 0; j < columnQuant; j++)
+    {
+      // TODO implementar um "rowProcess" para calcular a matriz inteira
+    }
+  }
 }
 
 /**
  * @brief Função para extração de MFCCs
  *
- * @param signal estrutura de input que pode ser inicializada com valores padrões
+ * @param signal estrutura de input que pode ser inicializada com um buffer e valores padrões
  * por meio da função "MFCC_initDefaultValues"
  * @return MFCC_coef
  */
 MFCC_coef MFCC_execute(MFCC_input *signal)
 {
+  // TODO liberar toda memoria alocada
+  // TODO verificar vazamentos de memoria
+
   // Iniciando valor de retorno
   MFCC_coef result = {
       .buffer = NULL,
@@ -177,9 +248,58 @@ MFCC_coef MFCC_execute(MFCC_input *signal)
   if (signal->normilizeActivate)
     MFCC_normilize(signal);
 
-  // TODO ultima função implementada
-  // TODO testar os valores de saida
-  MFCC_frames *frame = MFCC_frames_init(signal);
+  MFCC_frames *frames = NULL; // * Memoria liberada
+  MFCC_frames_init(signal, &frames);
+
+  HannWindow *hannWindow = MFCC_hanning(signal->fftSize); // * Memoria liberada
+  MFCC_multiplyFramesForHannWindow(&frames, hannWindow);
+  MFCC_free_HannWindow(hannWindow); // * liberando memoria
+
+  MatrixComplex *matrixComplex = MFCC_initDefaultComplexMatrix(frames);
+  MFCC_free_MFCC_frames(frames); // * liberando memoria
+
+  printf("aaaa\n");
+}
+
+/**
+ * @brief Construct a new mfcc free mfcc frames object
+ *
+ * @param frames
+ */
+void MFCC_free_MFCC_frames(MFCC_frames *frames)
+{
+  for (size_t i = 0; i < frames->num; i++)
+    free(frames->frameMatrix[i]);
+  free(frames->frameMatrix);
+  free(frames);
+}
+
+/**
+ * @brief Construct a new mfcc free hannwindow object
+ *
+ * @param hannWindow
+ */
+void MFCC_free_HannWindow(HannWindow *hannWindow)
+{
+  free(hannWindow->window);
+  free(hannWindow);
+};
+
+/**
+ * @brief Construct a new mfcc free MFCC_input object
+ *
+ * @param signal
+ */
+void MFCC_free_input(MFCC_input *signal)
+{
+  free(signal->buffer);
+  free(signal);
+}
+
+Bool MFCC_complex_is_even(double complex num)
+{
+  int a = (int)creal(num);
+  return creal(num) == a && a % 2 == 0 ? TRUE : FALSE;
 }
 
 /**
@@ -188,7 +308,7 @@ MFCC_coef MFCC_execute(MFCC_input *signal)
  * @param num
  * @return double
  */
-double myDoubleABS(double num)
+double MFCC_myDoubleABS(double num)
 {
   return num < 0 ? (num * -1) : num;
 }
@@ -199,36 +319,20 @@ double myDoubleABS(double num)
  * @param num
  * @return int
  */
-int myRound(double num)
+int MFCC_myRound(double num)
 {
   return (num - ((int)num)) > .5 ? num + 1 : num;
 }
 
 /**
- * @brief Instancia um novo vetor
+ * @brief Copia os valores do buffer "b" para o buffer "a"
  *
- * @param buffer vetor que tera os valores copiados
- * @param sizeBuffer tamanho do vetor
- * @return double* novo vetor com os valores copiados
+ * @param a buffer que será alterado
+ * @param b buffer que terá os valores coM_PIados
+ * @param sizeBuffer tamanho dos dois buffers
  */
-double *myBufferCP(double *buffer, int sizeBuffer)
+void MFCC_myBufferCP(double *a, double *b, int sizeBuffer)
 {
-  double *aux = (double *)malloc(sizeof(double) * sizeBuffer);
   for (size_t i = 0; i < sizeBuffer; i++)
-    aux[i] = buffer[i];
-
-  return aux;
-}
-
-/**
- * @brief Exibe os valores das estrururas pertinentes dessa lib
- *
- * @param MFCC_struct ponteiro generico para a estrutura
- * @param MFCC_type nome do tipo da estrutura: "MFCC_coef", "MFCC_input" ou "MFCC_frames"
- */
-void MFCC_structs_view(void *MFCC_struct, char *MFCC_type)
-{
-  if (strcmp(MFCC_type, "MFCC_coef") == 0)
-  {
-  }
+    a[i] = b[i];
 }

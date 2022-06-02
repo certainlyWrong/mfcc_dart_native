@@ -72,16 +72,16 @@ typedef struct
 	double *buffer;
 	size_t sizeBuffer;
 	uint32_t hopSize,
-		fftSize,
-		dctFilterNum,
-		melFilterNum;
+			fftSize,
+			dctFilterNum,
+			melFilterNum;
 	uint64_t sampleRate;
 	Bool normilizeActivate;
 } MFCC_input;
 
 MFCC_input *MFCC_initDefaultValues(double *buffer, size_t sizeBuffer);
 MFCC_coef MFCC_execute(MFCC_input *signal);
-void MFCC_input_free(MFCC_input *signal);
+void MFCC_free_input(MFCC_input *signal);
 
 #ifdef _MFCC_private
 
@@ -97,19 +97,45 @@ void MFCC_input_free(MFCC_input *signal);
 typedef struct
 {
 	double **frameMatrix;
-	uint16_t len, num;
+	uint16_t len, num, fftSize;
 } MFCC_frames;
 
-MFCC_frames *MFCC_frames_init(MFCC_input *signal);
+typedef struct
+{
+	double *window;
+	uint32_t fftSize;
+} HannWindow;
+
+// TODO implementar free
+typedef struct
+{
+	double complex *columns;
+	uint32_t columnNum;
+} ArrayComplex;
+
+// TODO implementar free
+typedef struct
+{
+	ArrayComplex *rows;
+	uint32_t rowNum;
+} MatrixComplex;
+
+void MFCC_frames_init(MFCC_input *signal, MFCC_frames **output);
 void MFCC_normilize(MFCC_input *signal);
 void MFCC_array_pad(MFCC_input *signal, char *mode);
-int myRound(double num);
-double myDoubleABS(double num);
-double *myBufferCP(double *Buffer, int sizeBuffer);
+int MFCC_myRound(double num);
+double MFCC_myDoubleABS(double num);
+void MFCC_myBufferCP(double *a, double *b, int sizeBuffer);
+HannWindow *MFCC_hanning(uint32_t fftSize);
+void MFCC_multiplyFramesForHannWindow(MFCC_frames **frames, HannWindow *window);
+MatrixComplex *MFCC_initDefaultComplexMatrix(MFCC_frames *frames);
+MatrixComplex *MFCC_fft_cooleyTukey(MatrixComplex *buffer);
+Bool MFCC_complex_is_even(double complex num);
 
+void MFCC_free_HannWindow(HannWindow *hannWindow);
+void MFCC_free_MFCC_frames(MFCC_frames *frames);
 #ifdef _MFCC_debug
 #include <stdio.h>
-_MFCC_debug void MFCC_structs_view(void *MFCC_struct, char *MFCC_type);
 #endif // _MFCC_debug
 #endif // _MFCC_private
 

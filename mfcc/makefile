@@ -11,13 +11,13 @@ libed: \
 	$(OBJ)/mfcc.o
 
 mytest:
-	gcc -lm -g $(SRC)/main.c $(OBJ)/*.o -I $(HEADER) -o $(APP)/main
+	gcc -g $(SRC)/main.c $(OBJ)/*.o -I $(HEADER) -o $(APP)/main -lm
 
 mytestWav:
-	gcc -lm -g $(SRC)/teste.c -o $(APP)/teste
+	gcc -g $(SRC)/teste.c -o $(APP)/teste -lm
 
 $(OBJ)/%.o: $(SRC)/%.c $(HEADER)/%.h
-	gcc -c -g $< -I $(HEADER) -o $@
+	gcc -c -g $< -I $(HEADER) -o $@ -lm
 
 clean:
 	rm -rf $(OBJ)/* $(APP)/* $(LIB)/*
